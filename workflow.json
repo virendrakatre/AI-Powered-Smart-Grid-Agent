@@ -1,0 +1,293 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtMinute": null
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0047c7ae-68f6-4324-90d4-e953e920515e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=21.1458&longitude=79.0882&current=temperature_2m,cloud_cover",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3ae74130-a812-40f7-affe-f050fb2c4284",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get current weather data from previous node\nconst weatherData = $json.current || { cloud_cover: 50, temperature_2m: 30 };\nconst cloudCover = weatherData.cloud_cover;\n\n// Simulate realistic industrial load based on current hour\nconst currentHour = new Date().getHours();\nlet baseLoad = 150; // Base load in kW\n\nif (currentHour >= 10 && currentHour <= 17) {\n  baseLoad += Math.floor(Math.random() * 100) + 150; // Peak hours: 250kW - 400kW\n} else {\n  baseLoad += Math.floor(Math.random() * 50); // Off-peak hours\n}\n\n// Generate battery State of Charge (SoC)\nconst batterySoC = Math.floor(Math.random() * 40) + 50; // 50% to 90%\n\nreturn [{\n  json: {\n    timestamp: new Date().toISOString(),\n    location: \"Nagpur, India\",\n    weather: {\n      cloud_cover_percent: cloudCover,\n      temperature_c: weatherData.temperature_2m\n    },\n    grid_metrics: {\n      factory_current_load_kw: baseLoad,\n      battery_storage_soc_percent: batterySoC\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2ac74592-2cad-43e4-817f-633206727f1c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an Expert Industrial Energy Management AI Agent acting under the framework of UN Sustainable Development Goals: SDG 7 (Affordable and Clean Energy) and SDG 9 (Industry, Innovation, and Infrastructure).\n\nYour objective is to analyze real-time grid metrics and environmental inputs to make automated optimization decisions that minimize operational costs, maximize renewable energy consumption, and reduce carbon footprint.\n\nAnalyze the incoming parameters carefully:\n- Current Factory Load: {{ $json.grid_metrics.factory_current_load_kw }} kW\n- Cloud Cover: {{ $json.weather.cloud_cover_percent }}%\n- Battery Storage Backup Status (State of Charge): {{ $json.grid_metrics.battery_storage_soc_percent }}%\n\nApply the following deterministic engineering logic to derive your strategy:\n1. CRITICAL PEAK PROTOCOL: If the Factory Load exceeds 250 kW and the Battery Storage State of Charge is above 60%, execute a peak-shaving action by transitioning heavy machinery power draw to 'Battery Storage' to prevent peak-demand grid penalties.\n2. OPTIMAL CLEAN ENERGY PROTOCOL: If the Cloud Cover is below 40% (indicating high solar irradiance) and the Factory Load is normal or medium, maximize localized green infrastructure utility by shifting operations to 'Solar Power'.\n3. WARNING / GRID DEPENDENT PROTOCOL: If the Cloud Cover is above 70% (dense weather obstruction) and battery levels are low or load requirements demand steady baseload stability, maintain reliance on the 'Main Grid' while dispatching a system warning to shed non-essential industrial load.\n\nGenerate your response in precise, technical, and professional English.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "238a1dda-a6c5-41e3-a3b0-89b8fcd9f381",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        240
+      ],
+      "id": "5071fbe5-1bd8-4818-b6a1-9309a705bbf9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HLORlVIdhEOkRjXa",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vmWGHZZMdGENS95l1AC7mKhCSHo2Gg4YL8vP2ZBsRl4",
+          "mode": "list",
+          "cachedResultName": "AI_Energy_Logs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmWGHZZMdGENS95l1AC7mKhCSHo2Gg4YL8vP2ZBsRl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1012852347,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmWGHZZMdGENS95l1AC7mKhCSHo2Gg4YL8vP2ZBsRl4/edit#gid=1012852347"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "={{ $json.output.status }}",
+            "Action Taken": "={{ $json.output.action_taken }}",
+            "Reasoning": "={{ $json.output.reasoning_summary }}",
+            "SDG Impact": "={{ $json.output.sdg_impact }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Action Taken",
+              "displayName": "Action Taken",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SDG Impact",
+              "displayName": "SDG Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1008,
+        -16
+      ],
+      "id": "be680568-b074-495d-b550-e87d7a82bab8",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eHfJAGmaDcoijaK1",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"status\": \"Optimal\",\n  \"action_taken\": \"Switched factory load to Solar Power distribution system.\",\n  \"reasoning_summary\": \"Low cloud cover and high solar irradiation detected during peak manufacturing hours.\",\n  \"sdg_impact\": \"Directly supports SDG 7 by maximizing affordable clean energy and reducing grid reliance.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        240
+      ],
+      "id": "8777bc97-68b7-44cb-bcbf-870ed86ba886",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sendTo": "virendra.s.katre@gmail.com",
+        "subject": "=⚠️ ALERT: Peak-Shaving Active [{{ $json.output.status }}]",
+        "message": "=<p>Dear Energy Manager,</p>\n\n<p>The Lenovo LEAP AI Framework has executed an automated grid optimization action to ensure infrastructure resilience under SDG 7/9 protocols.</p>\n\n<h3 style=\"color: #1a365d; font-family: Arial, sans-serif;\">[SYSTEM TELEMETRY SUMMARY]</h3>\n\n<table style=\"width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; margin-bottom: 20px;\">\n  <thead>\n    <tr style=\"background-color: #f2f4f8; border-bottom: 2px solid #cbd5e1;\">\n      <th style=\"padding: 12px; text-align: left; color: #334155; font-size: 14px;\">Parameter</th>\n      <th style=\"padding: 12px; text-align: left; color: #334155; font-size: 14px;\">Operational Telemetry Data</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr style=\"border-bottom: 1px solid #e2e8f0;\">\n      <td style=\"padding: 12px; font-weight: bold; color: #475569; width: 30%;\">System Status</td>\n      <td style=\"padding: 12px; color: #b91c1c; font-weight: bold; background-color: #fef2f2;\">{{ $json.output.status }}</td>\n    </tr>\n    <tr style=\"border-bottom: 1px solid #e2e8f0;\">\n      <td style=\"padding: 12px; font-weight: bold; color: #475569;\">Action Taken</td>\n      <td style=\"padding: 12px; color: #0f766e; font-weight: bold;\">{{ $json.output.action_taken }}</td>\n    </tr>\n    <tr style=\"border-bottom: 1px solid #e2e8f0;\">\n      <td style=\"padding: 12px; font-weight: bold; color: #475569;\">Core Logic</td>\n      <td style=\"padding: 12px; color: #334155; line-height: 1.5;\">{{ $json.output.reasoning_summary }}</td>\n    </tr>\n  </tbody>\n</table>\n\n<p style=\"font-size: 13px; color: #64748b; font-style: italic;\">Note: Data has been logged successfully within the master database ledger for historical compliance auditing. No manual intervention required.</p>\n\n<hr style=\"border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;\">\n\n<p style=\"font-size: 12px; color: #94a3b8; line-height: 1.4;\">\n  <strong>Regards,</strong><br>\n  Autonomous AI Grid Agent<br>\n  <span style=\"color: #64748b;\">Lenovo LEAP AI Gen Framework Deployment</span>\n</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        160
+      ],
+      "id": "c70d323d-1933-4200-9a2c-785bffdc704b",
+      "name": "Send a message",
+      "webhookId": "e0e5a159-faf1-4735-9c53-21f93d4e8144",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CqELv7B1VPUv5nog",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "26ec9860874a610cdfae767dd08ce7a3075d33bd3c6f907544fe425b3ad8bb24"
+  }
+}
